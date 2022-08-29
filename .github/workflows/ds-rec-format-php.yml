@@ -1,0 +1,72 @@
+name: Check PHP Script Syntax
+on:
+  pull_request:
+    paths:
+      - '**.php'
+
+jobs:
+  php-cs-fixer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Debug output
+        uses: hmarr/debug-action@v2
+      - name: GIT Changed Files
+        id: changed-files
+        uses: DawChihLiou/changed-files-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output: 'string'
+      - name: Output files
+        run: |
+          echo "${{ steps.changed-files.outputs.filenames }}"
+      - name: Set Environment Value for changed files
+        run: |
+          export CHANGED_FILES=`echo "${{ steps.changed-files.outputs.filenames }}" | grep -iEo '(\w+/){0,}[A-Za-z]*\w+\.php[\s]?' | tr "\n" " "`
+          echo "::set-env name=CHANGED_FILES::$CHANGED_FILES"
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+#      - run: echo 'hello world'
+#      - run: php -r 'echo "Helloo World!";'
+#      - run: echo `php -r '$t=5;print "$t times";'`
+      - name: Install PHP-CS-Fixer
+        run: npm run composer-tools
+#      - run: echo "${CHANGED_FILES}"
+#      - run: echo "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php -v --dry-run --stop-on-violation --using-cache=no" ${CHANGED_FILES}
+      - name: Run PHP CS Fixer
+        run: |
+          /usr/bin/env php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php -v --dry-run --using-cache=no ${CHANGED_FILES}
+
+#  php-cs-fixer:
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 2
+#      - name: Get Changed Files
+#        id: changed-files
+##        with:
+##          ref: ${{ github.head_ref }}
+##
+##      - run: echo '${{ github.ref }}'
+#      - run: echo "Line goes here"
+##      - run: echo '${{ github.head_ref }}'
+#      - run: CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRTUXB "${COMMIT_RANGE}")
+#      - run: echo "${CHANGED_FILES}"
+#
+#        with:
+#          ref: ${{ github.head_ref }}
+#
+#    - name: Install
+#      run: composer install
+#
+#    - name: Run php-cs-fixer
+#      run: ./vendor/bin/php-cs-fixer fix
+#
+#    - uses: stefanzweifel/git-auto-commit-action@v4
+#      with:
+#        commit_message: Apply php-cs-fixer changes
+#
